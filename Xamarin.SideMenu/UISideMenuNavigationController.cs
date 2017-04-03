@@ -203,7 +203,23 @@ namespace Xamarin.SideMenu
                 }
             }
 
-            presentingViewController.PushViewController(viewController, animated: animated);
+			switch (SideMenuManager.MenuPushStyle)
+			{
+				case SideMenuManager.MenuPushStyleType.subMenu:
+				case SideMenuManager.MenuPushStyleType.defaultBehavior:
+
+					break;                
+				case SideMenuManager.MenuPushStyleType.replace:
+					viewController.NavigationItem.SetHidesBackButton(true, false);
+					UIViewController[] viewctrl = { viewController };
+					presentingViewController.SetViewControllers(viewctrl, true);
+					CATransaction.Commit();
+					return;
+				default:
+					break;
+			}
+
+			presentingViewController.PushViewController(viewController, animated: animated);
             CATransaction.Commit();
         }
     }

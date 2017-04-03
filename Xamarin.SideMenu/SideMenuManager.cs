@@ -51,6 +51,16 @@ namespace Xamarin.SideMenu
          */
         public MenuPresentMode PresentMode = MenuPresentMode.ViewSlideOut;
 
+		public enum MenuPushStyleType 
+		{
+			defaultBehavior,
+			popWhenPossible,
+			replace,
+			preserve,
+			preserveAndHideBackButton,
+			subMenu
+		}
+
         /// Prevents the same view controller (or a view controller of the same class) from being pushed more than once. Defaults to true.
         public bool AllowPushOfSameClassTwice = true;
 
@@ -111,6 +121,14 @@ namespace Xamarin.SideMenu
         /// Draws the `menuAnimationBackgroundColor` behind the status bar. Default is true.
         public bool FadeStatusBar = true;
 
+		/// Menu Push Style
+		/// 
+		private MenuPushStyleType _menuPushStyle = MenuPushStyleType.defaultBehavior;
+		public MenuPushStyleType MenuPushStyle
+		{
+			get { return _menuPushStyle; }
+			set { _menuPushStyle = value; }
+		}
         /// - Warning: Deprecated. Use `menuAnimationTransformScaleFactor` instead.
         public double AnimationShrinkStrength
         {
