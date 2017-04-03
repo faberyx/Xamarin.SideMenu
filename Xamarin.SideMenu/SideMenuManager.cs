@@ -32,7 +32,7 @@ namespace Xamarin.SideMenu
         
         public enum MenuPushStyleType
         {
-           DefaultBehavior, PopWhenPossible, Replace, Preserve, PreserveAndHideBackButton, SubMenu
+           DefaultBehavior, PopWhenPossible, Replace, Preserve, PreserveAndHideBackButton, SubMenu, NoNavigation
         }
 
         // Bounds which has been allocated for the app on the whole device screen

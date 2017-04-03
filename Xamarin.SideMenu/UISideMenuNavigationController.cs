@@ -174,13 +174,16 @@ namespace Xamarin.SideMenu
             CATransaction.Begin();
             CATransaction.CompletionBlock = () =>
             {
-                this.DismissViewController(true, null);
+                if(SideMenuManager.MenuPushStyle != SideMenuManager.MenuPushStyleType.NoNavigation)
+                {
+                    this.DismissViewController(true, null);
+                }
+
                 this.VisibleViewController?.ViewWillAppear(false); // Hack: force selection to get cleared on UITableViewControllers when reappearing using custom transitions
             };
 
             UIView.Animate(SideMenuManager.AnimationDismissDuration, animation: () => SideMenuManager.SideMenuTransition.HideMenuStart());
-
-    
+             
             if (!SideMenuManager.AllowPushOfSameClassTwice)
             {
                 //TODO: Review this
@@ -231,7 +234,16 @@ namespace Xamarin.SideMenu
                     }
                     break;
                 case SideMenuManager.MenuPushStyleType.Replace:
-                    viewController.NavigationItem.SetHidesBackButton(true, false);
+                case SideMenuManager.MenuPushStyleType.NoNavigation:
+                    if (SideMenuManager.MenuPushStyle != SideMenuManager.MenuPushStyleType.NoNavigation)
+                    {
+                        viewController.NavigationItem.LeftBarButtonItem = SideMenuManager.LeftNavigationController.NavigationItem.LeftBarButtonItem;
+                        viewController.NavigationItem.RightBarButtonItem = SideMenuManager.LeftNavigationController.NavigationItem.RightBarButtonItem;
+                    }
+                    else
+                    { 
+                        viewController.NavigationItem.SetHidesBackButton(true, false);
+                    }
                     UIViewController[] viewctrl = { viewController };
 
                     presentingViewController.SetViewControllers(viewctrl, true);
