@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 using CoreGraphics;
 using Foundation;
 using UIKit;
@@ -10,11 +11,11 @@ namespace Xamarin.SideMenu
 {
     public class UISideMenuNavigationController : UINavigationController
     {
-        public SideMenuManager SideMenuManager { get; set;}
-        
+        public SideMenuManager SideMenuManager { get; set; }
+
         public bool LeftSide { get; set; }
 
-        public UISideMenuNavigationController(SideMenuManager sideMenuManager, UIViewController rootViewController, bool leftSide = true) : base (rootViewController)
+        public UISideMenuNavigationController(SideMenuManager sideMenuManager, UIViewController rootViewController, bool leftSide = true) : base(rootViewController)
         {
             SideMenuManager = sideMenuManager;
 
@@ -150,17 +151,17 @@ namespace Xamarin.SideMenu
                 return;
             }
 
-	    UINavigationController presentingViewController = null;
+            UINavigationController presentingViewController = null;
 
-	    if (PresentingViewController is UINavigationController)
-	    {
-	    	presentingViewController = PresentingViewController as UINavigationController;
-	    }
-	    else if (PresentingViewController is UITabBarController)
-	    {
-	    	presentingViewController = ((UITabBarController)PresentingViewController).SelectedViewController as UINavigationController;
-	    }
-			
+            if (PresentingViewController is UINavigationController)
+            {
+                presentingViewController = PresentingViewController as UINavigationController;
+            }
+            else if (PresentingViewController is UITabBarController)
+            {
+                presentingViewController = ((UITabBarController)PresentingViewController).SelectedViewController as UINavigationController;
+            }
+
             if (presentingViewController == null)
             {
                 PresentViewController(viewController, animated, null);
@@ -179,47 +180,68 @@ namespace Xamarin.SideMenu
 
             UIView.Animate(SideMenuManager.AnimationDismissDuration, animation: () => SideMenuManager.SideMenuTransition.HideMenuStart());
 
-            if (SideMenuManager.AllowPopIfPossible)
-            {
-                foreach (var subViewController in presentingViewController.ViewControllers)
-                {
-                    //TODO: Review this
-                    if (subViewController.GetType() == viewController.GetType()) // if subViewController.dynamicType == viewController.dynamicType {
-                    {
-                        presentingViewController.PopToViewController(subViewController, animated: animated);
-                        CATransaction.Commit();
-                        return;
-                    }
-                }
-            }
-
+    
             if (!SideMenuManager.AllowPushOfSameClassTwice)
             {
                 //TODO: Review this
-                if (presentingViewController.ViewControllers[presentingViewController.ViewControllers.Length - 1].GetType() == viewController.GetType()) //if presentingViewController.viewControllers.last?.dynamicType == viewController.dynamicType {
+                var lastView = ViewControllers.LastOrDefault();
+                if (lastView != null && lastView.GetType() == viewController.GetType()) //if presentingViewController.viewControllers.last?.dynamicType == viewController.dynamicType {
                 {
                     CATransaction.Commit();
                     return;
                 }
             }
 
-			switch (SideMenuManager.MenuPushStyle)
-			{
-				case SideMenuManager.MenuPushStyleType.subMenu:
-				case SideMenuManager.MenuPushStyleType.defaultBehavior:
+            switch (SideMenuManager.MenuPushStyle)
+            {
+                case SideMenuManager.MenuPushStyleType.SubMenu:
+                case SideMenuManager.MenuPushStyleType.DefaultBehavior:
+                    break;
+                case SideMenuManager.MenuPushStyleType.PopWhenPossible:
+                    foreach(var subViewController in presentingViewController.ViewControllers.Reverse())
+                    {
+                        if (subViewController.GetType() == viewController.GetType())
+                        {
+                            presentingViewController.PopToViewController(subViewController, animated: animated);
+                            CATransaction.Commit();
+                            return;
+                        }
+                    }
+                    break;
+                case SideMenuManager.MenuPushStyleType.Preserve:
+                case SideMenuManager.MenuPushStyleType.PreserveAndHideBackButton:
+                    var viewControllers = presentingViewController.ViewControllers;
+                    var preservedViewController = viewControllers.Where(x => x.GetType() == viewController.GetType()).LastOrDefault();
+                    if (preservedViewController != null)
+                    {
+                        if (SideMenuManager.MenuPushStyle == SideMenuManager.MenuPushStyleType.PreserveAndHideBackButton)
+                        {
+                            preservedViewController.NavigationItem.SetHidesBackButton(true, false);
+                        }
+                        viewControllers.Append(preservedViewController);
+                        presentingViewController.SetViewControllers(viewControllers, animated: animated);
 
-					break;                
-				case SideMenuManager.MenuPushStyleType.replace:
-					viewController.NavigationItem.SetHidesBackButton(true, false);
-					UIViewController[] viewctrl = { viewController };
-					presentingViewController.SetViewControllers(viewctrl, true);
-					CATransaction.Commit();
-					return;
-				default:
-					break;
-			}
+                        CATransaction.Commit();
+                        return;
+                    }
 
-			presentingViewController.PushViewController(viewController, animated: animated);
+                    if (SideMenuManager.MenuPushStyle == SideMenuManager.MenuPushStyleType.PreserveAndHideBackButton)
+                    {
+                        viewController.NavigationItem.SetHidesBackButton(true, false);
+                    }
+                    break;
+                case SideMenuManager.MenuPushStyleType.Replace:
+                    viewController.NavigationItem.SetHidesBackButton(true, false);
+                    UIViewController[] viewctrl = { viewController };
+
+                    presentingViewController.SetViewControllers(viewctrl, true);
+                    CATransaction.Commit();
+                    return;
+                default:
+                    break;
+            }
+
+            presentingViewController.PushViewController(viewController, animated: animated);
             CATransaction.Commit();
         }
     }

@@ -29,6 +29,11 @@ namespace Xamarin.SideMenu
         {
             MenuSlideIn, ViewSlideOut, ViewSlideInOut, MenuDissolveIn
         }
+        
+        public enum MenuPushStyleType
+        {
+           DefaultBehavior, PopWhenPossible, Replace, Preserve, PreserveAndHideBackButton, SubMenu
+        }
 
         // Bounds which has been allocated for the app on the whole device screen
         public CGRect appScreenRect
@@ -51,21 +56,21 @@ namespace Xamarin.SideMenu
          */
         public MenuPresentMode PresentMode = MenuPresentMode.ViewSlideOut;
 
-		public enum MenuPushStyleType 
-		{
-			defaultBehavior,
-			popWhenPossible,
-			replace,
-			preserve,
-			preserveAndHideBackButton,
-			subMenu
-		}
-
         /// Prevents the same view controller (or a view controller of the same class) from being pushed more than once. Defaults to true.
         public bool AllowPushOfSameClassTwice = true;
 
         /// Pops to any view controller already in the navigation stack instead of the view controller being pushed if they share the same class. Defaults to false.
-        public bool AllowPopIfPossible = false;
+        public bool AllowPopIfPossible
+        {
+            get
+            {
+                return MenuPushStyle == MenuPushStyleType.PopWhenPossible;
+            }
+            set
+            {
+                MenuPushStyle = MenuPushStyleType.PopWhenPossible;
+            }
+        }
 
 
 		double _menuWidth;
@@ -121,14 +126,26 @@ namespace Xamarin.SideMenu
         /// Draws the `menuAnimationBackgroundColor` behind the status bar. Default is true.
         public bool FadeStatusBar = true;
 
-		/// Menu Push Style
-		/// 
-		private MenuPushStyleType _menuPushStyle = MenuPushStyleType.defaultBehavior;
-		public MenuPushStyleType MenuPushStyle
+		/// Menu Push Navigation style
+		private MenuPushStyleType _menuPushStyle = MenuPushStyleType.DefaultBehavior;
+
+        /**
+        The push style of the menu.
+    
+        There are six modes in MenuPushStyle:
+        - defaultBehavior: The view controller is pushed onto the stack.
+        - popWhenPossible: If a view controller already in the stack is of the same class as the pushed view controller, the stack is instead popped back to the existing view controller. This behavior can help users from getting lost in a deep navigation stack.
+        - preserve: If a view controller already in the stack is of the same class as the pushed view controller, the existing view controller is pushed to the end of the stack. This behavior is similar to a UITabBarController.
+        - preserveAndHideBackButton: Same as .preserve and back buttons are automatically hidden.
+        - replace: Any existing view controllers are released from the stack and replaced with the pushed view controller. Back buttons are automatically hidden. This behavior is ideal if view controllers require a lot of memory or their state doesn't need to be preserved..
+        - subMenu: Unlike all other behaviors that push using the menu's presentingViewController, this behavior pushes view controllers within the menu.  Use this behavior if you want to display a sub menu.
+        */
+        public MenuPushStyleType MenuPushStyle
 		{
 			get { return _menuPushStyle; }
 			set { _menuPushStyle = value; }
 		}
+
         /// - Warning: Deprecated. Use `menuAnimationTransformScaleFactor` instead.
         public double AnimationShrinkStrength
         {
